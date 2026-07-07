@@ -10,6 +10,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vibe.ccc.aichat.data.auth.AuthStore
+import vibe.ccc.aichat.data.auth.TestAccount
 import vibe.ccc.aichat.data.model.APIError
 import vibe.ccc.aichat.data.model.ChatMessage
 import vibe.ccc.aichat.data.model.ChatRole
@@ -58,6 +59,10 @@ class ChatViewModel(
             requestLogin()
             return
         }
+        if (TestAccount.isLegacyToken(token)) {
+            requestLogin()
+            return
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoadingHistory = true, errorMessage = null) }
@@ -86,6 +91,10 @@ class ChatViewModel(
         }
         val beforeId = nextBeforeId ?: return
         if (!_state.value.hasMore || _state.value.isLoadingEarlier) return
+        if (TestAccount.isLegacyToken(token)) {
+            requestLogin()
+            return
+        }
 
         viewModelScope.launch {
             _state.update { it.copy(isLoadingEarlier = true, errorMessage = null) }
@@ -115,6 +124,10 @@ class ChatViewModel(
         val token = authStore.state.value.accessToken
         if (token.isNullOrBlank()) {
             _state.update { it.copy(errorMessage = APIError.MissingToken.message) }
+            requestLogin()
+            return false
+        }
+        if (TestAccount.isLegacyToken(token)) {
             requestLogin()
             return false
         }
@@ -177,6 +190,10 @@ class ChatViewModel(
     fun clearHistory() {
         val token = authStore.state.value.accessToken
         if (token.isNullOrBlank()) {
+            requestLogin()
+            return
+        }
+        if (TestAccount.isLegacyToken(token)) {
             requestLogin()
             return
         }

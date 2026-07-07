@@ -22,7 +22,7 @@ class AuthStore(
     private val tokenStore: SecureTokenStore,
     scope: CoroutineScope
 ) {
-    private val accessToken = MutableStateFlow(tokenStore.read())
+    private val accessToken = MutableStateFlow(tokenStore.read().takeUnless(TestAccount::isLegacyToken))
 
     val state: StateFlow<AuthState> = combine(accessToken, appPreferences.user) { token, user ->
         AuthState(accessToken = token, user = user)
@@ -33,14 +33,14 @@ class AuthStore(
     )
 
     suspend fun update(session: LoginSession) {
-        tokenStore.save(session.accessToken)
         accessToken.value = session.accessToken
-        appPreferences.persistUser(session.user)
+        runCatching { tokenStore.save(session.accessToken) }
+        runCatching { appPreferences.persistUser(session.user) }
     }
 
     suspend fun clear() {
-        tokenStore.delete()
+        runCatching { tokenStore.delete() }
         accessToken.value = null
-        appPreferences.clearUser()
+        runCatching { appPreferences.clearUser() }
     }
 }

@@ -28,11 +28,11 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.Close
 import androidx.compose.material.icons.rounded.Delete
 import androidx.compose.material.icons.rounded.Photo
-import androidx.compose.material.icons.rounded.Send
 import androidx.compose.material.icons.rounded.Stop
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
@@ -282,7 +282,7 @@ private fun ChatTopBar(role: ChatRole, onBack: () -> Unit, onClear: () -> Unit) 
             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         IconButton(onClick = onBack, modifier = Modifier.clip(CircleShape).background(Gray100)) {
-            Icon(Icons.Rounded.ArrowBack, contentDescription = "返回", tint = TextPrimary)
+            Icon(Icons.AutoMirrored.Rounded.ArrowBack, contentDescription = "返回", tint = TextPrimary)
         }
         RemoteImage(url = role.avatarImageUrl, modifier = Modifier.size(40.dp).clip(CircleShape))
         Column(Modifier.weight(1f)) {
@@ -382,7 +382,7 @@ private fun Composer(
                 modifier = Modifier.clip(CircleShape).background(if (isSending || canSend) AppBrushes.hero else AppBrushes.imagePlaceholder)
             ) {
                 Icon(
-                    imageVector = if (isSending) Icons.Rounded.Stop else Icons.Rounded.Send,
+                    imageVector = if (isSending) Icons.Rounded.Stop else Icons.AutoMirrored.Rounded.Send,
                     contentDescription = if (isSending) "停止" else "发送",
                     tint = Color.White
                 )

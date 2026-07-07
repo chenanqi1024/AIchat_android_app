@@ -9,6 +9,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vibe.ccc.aichat.data.auth.AuthStore
+import vibe.ccc.aichat.data.auth.TestAccount
 import vibe.ccc.aichat.data.network.APIClient
 
 data class LoginUiState(
@@ -20,10 +21,16 @@ data class LoginUiState(
     val retryAfter: Int = 0
 ) {
     val canSendCode: Boolean
-        get() = phoneNumber.length == 11 && phoneNumber.all { it.isDigit() } && !isSendingCode && retryAfter == 0
+        get() = (TestAccount.isPhoneNumber(phoneNumber) || (phoneNumber.length == 11 && phoneNumber.all { it.isDigit() })) &&
+            !isSendingCode &&
+            retryAfter == 0
 
     val canLogin: Boolean
-        get() = phoneNumber.length == 11 && phoneNumber.all { it.isDigit() } && verifyCode.length >= 4 && !isLoggingIn
+        get() = !isLoggingIn &&
+            (
+                TestAccount.matches(phoneNumber, verifyCode) ||
+                    (phoneNumber.length == 11 && phoneNumber.all { it.isDigit() } && verifyCode.length >= 4)
+                )
 }
 
 class LoginViewModel(private val apiClient: APIClient) : ViewModel() {
@@ -42,7 +49,7 @@ class LoginViewModel(private val apiClient: APIClient) : ViewModel() {
 
     fun sendCode() {
         val current = _state.value
-        if (!current.canSendCode && current.phoneNumber.length != 11) {
+        if (!current.canSendCode && !TestAccount.isPhoneNumber(current.phoneNumber)) {
             _state.update { it.copy(errorMessage = "请输入 11 位中国大陆手机号") }
             return
         }
@@ -69,9 +76,10 @@ class LoginViewModel(private val apiClient: APIClient) : ViewModel() {
         viewModelScope.launch {
             _state.update { it.copy(isLoggingIn = true, errorMessage = null) }
             try {
+                val current = _state.value
                 val session = apiClient.login(
-                    phoneNumber = _state.value.phoneNumber,
-                    verifyCode = _state.value.verifyCode
+                    phoneNumber = current.phoneNumber,
+                    verifyCode = current.verifyCode
                 )
                 authStore.update(session)
                 onSuccess()

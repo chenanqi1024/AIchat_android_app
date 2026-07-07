@@ -18,12 +18,12 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.automirrored.rounded.Message
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.ChevronRight
 import androidx.compose.material.icons.rounded.History
-import androidx.compose.material.icons.rounded.Message
 import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material3.Button
@@ -35,6 +35,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -43,12 +44,16 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.viewmodel.compose.viewModel
 import vibe.ccc.aichat.data.auth.AuthState
 import vibe.ccc.aichat.data.auth.AuthStore
@@ -90,11 +95,22 @@ fun HomeScreen(
         factory = viewModelFactory { RoleListViewModel(apiClient, roleRepository, appPreferences) }
     )
     val state by viewModel.state.collectAsState()
+    val lifecycleOwner = LocalLifecycleOwner.current
     var isShowingLogin by remember { mutableStateOf(false) }
     var pendingRole by remember { mutableStateOf<ChatRole?>(null) }
 
     LaunchedEffect(authState.accessToken, state.roles) {
         viewModel.loadRecentChats(authState.accessToken)
+    }
+
+    DisposableEffect(lifecycleOwner, authState.accessToken) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.loadRecentChats(authState.accessToken)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(
@@ -217,10 +233,19 @@ private fun FeaturedRoleCard(role: ChatRole, onOpenRole: (ChatRole) -> Unit) {
         shape = RoundedCornerShape(24.dp),
         modifier = Modifier.fillMaxWidth()
     ) {
-        Box {
-            RemoteImage(url = role.backgroundImageUrl, modifier = Modifier.fillMaxSize())
-            Box(Modifier.fillMaxSize().background(AppBrushes.soft))
-            Column(Modifier.padding(24.dp)) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            RemoteImage(
+                url = role.backgroundImageUrl,
+                modifier = Modifier
+                    .matchParentSize()
+                    .alpha(0.22f)
+            )
+            Box(Modifier.matchParentSize().background(AppBrushes.soft))
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp)
+            ) {
                 Row(horizontalArrangement = Arrangement.spacedBy(16.dp), verticalAlignment = Alignment.Top) {
                     RemoteImage(
                         url = role.avatarImageUrl,
@@ -308,7 +333,7 @@ private fun RoleTile(role: ChatRole, selected: Boolean, onClick: () -> Unit) {
 @Composable
 private fun QuickActionsSection(onContinue: () -> Unit, onRefresh: () -> Unit) {
     Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-        QuickAction("继续聊天", Icons.Rounded.Message, Purple600, onContinue, Modifier.weight(1f))
+        QuickAction("继续聊天", Icons.AutoMirrored.Rounded.Message, Purple600, onContinue, Modifier.weight(1f))
         QuickAction("聊天记录", Icons.Rounded.History, Blue600, onContinue, Modifier.weight(1f))
         QuickAction("重新加载", Icons.Rounded.Refresh, Pink600, onRefresh, Modifier.weight(1f))
     }
@@ -322,11 +347,38 @@ private fun QuickAction(
     onClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Card(onClick = onClick, colors = CardDefaults.cardColors(containerColor = Color.White), shape = RoundedCornerShape(16.dp), modifier = modifier) {
-        Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.padding(16.dp)) {
-            Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(28.dp))
+    Card(
+        onClick = onClick,
+        colors = CardDefaults.cardColors(containerColor = Color.White),
+        shape = RoundedCornerShape(16.dp),
+        modifier = modifier.height(96.dp)
+    ) {
+        Column(
+            verticalArrangement = Arrangement.Center,
+            horizontalAlignment = Alignment.CenterHorizontally,
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(horizontal = 8.dp, vertical = 12.dp)
+        ) {
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(tint.copy(alpha = 0.12f))
+            ) {
+                Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(24.dp))
+            }
             Spacer(Modifier.height(8.dp))
-            Text(title, color = TextPrimary, style = MaterialTheme.typography.bodySmall, maxLines = 1)
+            Text(
+                title,
+                color = TextPrimary,
+                style = MaterialTheme.typography.bodySmall,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.fillMaxWidth()
+            )
         }
     }
 }
