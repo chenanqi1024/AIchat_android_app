@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
@@ -351,6 +352,7 @@ private fun Composer(
             .fillMaxWidth()
             .background(Color.White.copy(alpha = 0.86f))
             .imePadding()
+            .navigationBarsPadding()
             .padding(horizontal = 24.dp, vertical = 12.dp)
     ) {
         errorMessage?.let { Text(it, color = AppWarm, style = MaterialTheme.typography.bodySmall) }
